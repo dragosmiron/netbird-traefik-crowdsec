@@ -8,27 +8,46 @@ All secrets and cryptographic keys are **automatically generated** via `./deploy
 
 ## Architecture Overview
 
-```text
-                                  Internet
-                                     │
-                     [Port 80 / 443 / 3478 / 51820]
-                                     ▼
-                            Target Host / VPS
-   ┌─────────────────────────────────────────────────────────────┐
-   │ Traefik v3.6 Reverse Proxy                                  │
-   │  ├── CrowdSec Traefik Bouncer (Stream Mode)                │
-   │  ├── CrowdSec AppSec WAF (Port 7422)                       │
-   │  └── Let's Encrypt ACME (Automatic TLS)                    │
-   │                                                             │
-   │ NetBird Services                                            │
-   │  ├── NetBird Management + Signal + STUN (netbird-server)    │
-   │  ├── NetBird Web Dashboard (dashboard)                     │
-   │  └── NetBird Reverse Proxy (proxy, TCP passthrough)         │
-   │                                                             │
-   │ CrowdSec Intrusion Prevention System                        │
-   │  ├── Real-time AppSec WAF inspecting HTTP/API requests      │
-   │  └── Community Blocklists & Automated Bouncing             │
-   └─────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Internet["Internet Traffic"]
+        clients["NetBird VPN Clients & Web Browsers"]
+    end
+
+    subgraph Host["Target Host / VPS (UFW & Fail2ban)"]
+        direction TB
+
+        subgraph TraefikStack["Edge Ingress (Traefik v3.6)"]
+            traefik["Traefik Reverse Proxy<br/><code>80/tcp & 443/tcp,udp</code>"]
+            acme["Let's Encrypt TLS"]
+        end
+
+        subgraph CrowdSecStack["CrowdSec IPS & WAF"]
+            crowdsec["CrowdSec Engine<br/><code>AppSec WAF :7422 | LAPI :8080</code>"]
+            hub["Community Blocklists & Hub Rules"]
+        end
+
+        subgraph NetBirdCore["NetBird Services"]
+            server["NetBird Server<br/><code>Management, Signal & STUN :3478/udp</code>"]
+            dashboard["NetBird Web Dashboard<br/><code>Next.js Web UI :80</code>"]
+            proxy["NetBird Reverse Proxy<br/><code>Public Resource Ingress :8443 | WG :51820/udp</code>"]
+            nb_db[(NetBird SQLite DB<br/><code>store.db & idp.db</code>)]
+        end
+    end
+
+    clients -->|"HTTPS / gRPC / Web"| traefik
+    clients -->|"STUN / Peer Discovery"| server
+    clients -->|"WireGuard Relay / Ingress"| proxy
+
+    traefik -->|"Inspect Requests (AppSec)"| crowdsec
+    crowdsec -.->|"Decisions Stream"| traefik
+    crowdsec --- hub
+    traefik --- acme
+
+    traefik -->|"gRPC / API / Signal"| server
+    traefik -->|"Web Dashboard UI"| dashboard
+    traefik -->|"TCP Passthrough (HostSNI: *)"| proxy
+    server --> nb_db
 ```
 
 ---
