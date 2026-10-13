@@ -1,0 +1,36 @@
+name: Deploy NetBird Stack
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure SSH private key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p ${{ secrets.SSH_PORT || 39422 }} -H "${{ secrets.SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync configuration files to server
+        run: |
+          rsync -avz -e "ssh -p ${{ secrets.SSH_PORT || 39422 }}" \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.env' \
+            --exclude 'config.yaml' \
+            --exclude 'proxy.env' \
+            --exclude 'dashboard.env' \
+            ./ "${{ secrets.SSH_USER || 'deploy' }}@${{ secrets.SSH_HOST }}:/opt/netbird/"
+
+      - name: Run deploy script on remote host
+        run: |
+          ssh -p ${{ secrets.SSH_PORT || 39422 }} "${{ secrets.SSH_USER || 'deploy' }}@${{ secrets.SSH_HOST }}" 'bash /opt/netbird/deploy.sh'

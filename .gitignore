@@ -1,0 +1,28 @@
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Secrets & Live Configurations (NEVER COMMIT)
+.env
+config.yaml
+proxy.env
+dashboard.env
+!configs/*.example
+
+# Persistent Storage, Databases & Logs
+*.db
+*.sqlite
+*.sqlite3
+*.tar.gz
+netbird_data/
+crowdsec_data/
+logs/
+**/logs/
+
+# SSL Certificates & ACME secrets
+*.pem
+*.key
+*.crt
+acme.json
