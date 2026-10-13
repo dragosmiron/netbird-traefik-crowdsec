@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Hardened NetBird Stack Deployment Script
+# NetBird Stack Deployment Script
 # Supports:
 #   1. Running from scratch on a blank VPS (requires NETBIRD_DOMAIN)
 #   2. Running on an existing VPS (safely detects domain and updates containers without overwriting)

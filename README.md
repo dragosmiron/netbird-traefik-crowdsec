@@ -1,6 +1,6 @@
-# Hardened NetBird Docker Stack (with Traefik v3.6 & CrowdSec AppSec WAF)
+# NetBird Docker Stack (with Traefik v3.6 & CrowdSec AppSec WAF)
 
-Production-ready, hardened deployment configuration for self-hosting the [NetBird](https://netbird.io/) zero-trust mesh network, protected by **Traefik v3.6** with automatic Let's Encrypt TLS and **CrowdSec AppSec WAF**.
+Production-ready deployment configuration for self-hosting the [NetBird](https://netbird.io/) zero-trust mesh network, protected by **Traefik v3.6** with automatic Let's Encrypt TLS and **CrowdSec AppSec WAF**.
 
 All secrets and cryptographic keys are **automatically generated** via `./deploy.sh` on fresh installs. Existing installations are automatically detected and safely updated without overwriting secrets or wiping databases.
 
@@ -43,7 +43,7 @@ This repository uses generic placeholders throughout the documentation, configur
 | `netbird.yourdomain.com` | Subdomain allocated for NetBird | `vpn.example.org`, `netbird.mycompany.io` | `NETBIRD_DOMAIN`, DNS record |
 | `admin@yourdomain.com` | Administrator email for ACME TLS certificate registration | `noc@example.org`, `devops@mycompany.io` | `LETSENCRYPT_EMAIL`, Let's Encrypt notifications |
 | `203.0.113.10` | Public IPv4 address of your VPS / Host server *(RFC 5737 placeholder)* | `198.51.100.42` | DNS **A** record target in your DNS provider |
-| `39422` | Hardened SSH port configured during OS bootstrap | Any custom port between `1024` and `65535` | `SSH_PORT` environment variable |
+| `39422` | Custom SSH port configured during OS bootstrap | Any custom port between `1024` and `65535` | `SSH_PORT` environment variable |
 | `deploy` | Dedicated non-root user created for running services | Any standard username (e.g. `ubuntu`, `admin`) | `DEPLOY_USER` in `bootstrap-os.sh` |
 
 ---
