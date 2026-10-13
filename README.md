@@ -10,44 +10,18 @@ All secrets and cryptographic keys are **automatically generated** via `./deploy
 
 ```mermaid
 flowchart TD
-    subgraph Internet["Internet Traffic"]
-        clients["NetBird VPN Clients & Web Browsers"]
-    end
+    traffic([Inbound Internet Traffic]) --> L1
 
-    subgraph Host["Target Host / VPS (UFW & Fail2ban)"]
+    subgraph Defense["Hardened Security Pipeline (Provided by Stack)"]
         direction TB
-
-        subgraph TraefikStack["Edge Ingress (Traefik v3.6)"]
-            traefik["Traefik Reverse Proxy<br/><code>80/tcp & 443/tcp,udp</code>"]
-            acme["Let's Encrypt TLS"]
-        end
-
-        subgraph CrowdSecStack["CrowdSec IPS & WAF"]
-            crowdsec["CrowdSec Engine<br/><code>AppSec WAF :7422 | LAPI :8080</code>"]
-            hub["Community Blocklists & Hub Rules"]
-        end
-
-        subgraph NetBirdCore["NetBird Services"]
-            server["NetBird Server<br/><code>Management, Signal & STUN :3478/udp</code>"]
-            dashboard["NetBird Web Dashboard<br/><code>Next.js Web UI :80</code>"]
-            proxy["NetBird Reverse Proxy<br/><code>Public Resource Ingress :8443 | WG :51820/udp</code>"]
-            nb_db[(NetBird SQLite DB<br/><code>store.db & idp.db</code>)]
-        end
+        L1["Layer 1: OS Hardening<br/>UFW Minimal Ports • Fail2ban 24h Jail • Kernel Network Hardening"]
+        L2["Layer 2: Edge Reverse Proxy (Traefik v3.6)<br/>Automatic Let's Encrypt TLS • CrowdSec Bouncer Middleware"]
+        L3["Layer 3: AppSec WAF (CrowdSec Engine)<br/>Real-Time L7 Inspection • Virtual Patching (.env / CVEs) • Threat Intel"]
     end
 
-    clients -->|"HTTPS / gRPC / Web"| traefik
-    clients -->|"STUN / Peer Discovery"| server
-    clients -->|"WireGuard Relay / Ingress"| proxy
-
-    traefik -->|"Inspect Requests (AppSec)"| crowdsec
-    crowdsec -.->|"Decisions Stream"| traefik
-    crowdsec --- hub
-    traefik --- acme
-
-    traefik -->|"gRPC / API / Signal"| server
-    traefik -->|"Web Dashboard UI"| dashboard
-    traefik -->|"TCP Passthrough (HostSNI: *)"| proxy
-    server --> nb_db
+    L1 --> L2
+    L2 <-->|"Inspect & Remediate"| L3
+    L2 --> App["NetBird Core Services<br/>Protected Mesh VPN, Signal, STUN & Reverse Proxy"]
 ```
 
 ---
