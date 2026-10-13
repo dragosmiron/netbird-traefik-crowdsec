@@ -98,6 +98,9 @@ echo " Target Domain:       ${DOMAIN}"
 echo " Let's Encrypt Email: ${LE_EMAIL}"
 echo " Deployment Type:     $([[ -n "${EXISTING_DOMAIN}" ]] && echo 'Existing In-Place Update' || echo 'Fresh Installation')"
 echo "================================================================================"
+echo " To customize these values (e.g. NETBIRD_DOMAIN, LETSENCRYPT_EMAIL), see README.md."
+echo " Press Ctrl+C or answer 'n' to abort and adjust your environment variables."
+echo "================================================================================"
 
 if [[ "${FORCE}" != "true" ]] && [[ -t 0 ]]; then
   read -r -p "Proceed with these settings? [y/N]: " confirm
