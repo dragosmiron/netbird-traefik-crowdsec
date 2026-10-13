@@ -154,13 +154,18 @@ if [[ ! -f proxy.env ]]; then
   if [[ -f configs/proxy.env.example ]]; then
     echo "    --> Creating proxy.env for domain: ${DOMAIN}..."
     PROXY_KEY="$(grep "^CROWDSEC_PROXY_BOUNCER_KEY=" .env | cut -d "=" -f2- | tr -d " \"'" || openssl rand -hex 32)"
+    PROXY_TOKEN="${NETBIRD_PROXY_TOKEN:-nbx_GENERATE_TOKEN_IN_DASHBOARD}"
     sed -e "s|netbird\.example\.com|${DOMAIN}|g" \
         -e "s|GENERATE_WITH_CSCLI_BOUNCERS_ADD|${PROXY_KEY}|g" \
+        -e "s|nbx_GENERATE_TOKEN_IN_DASHBOARD|${PROXY_TOKEN}|g" \
         configs/proxy.env.example > proxy.env
     chmod 600 proxy.env
   else
     echo "    [WARN] proxy.env missing and configs/proxy.env.example not found." >&2
   fi
+elif [[ -n "${NETBIRD_PROXY_TOKEN:-}" ]]; then
+  # Update proxy token if explicitly passed
+  sed -i.bak -e "s|^NB_PROXY_TOKEN=.*|NB_PROXY_TOKEN=${NETBIRD_PROXY_TOKEN}|g" proxy.env && rm -f proxy.env.bak
 fi
 
 # 7. Generate config.yaml if missing

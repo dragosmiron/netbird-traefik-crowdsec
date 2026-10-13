@@ -101,24 +101,26 @@ This repository uses generic placeholders throughout the documentation, configur
 
 ### Step 1: DNS Setup
 
-Before deploying, create an **A record** in your domain registrar or DNS management dashboard (e.g., Cloudflare, Porkbun, Namecheap, Route 53, Hetzner, etc.):
+Before deploying, create the required DNS **A records** in your domain registrar or DNS management dashboard (e.g., Cloudflare, Porkbun, Namecheap, Route 53, Hetzner, etc.):
 
-| Setting | Value to Enter | Explanation |
-| :--- | :--- | :--- |
-| **Record Type** | `A` | Maps your hostname to your server's public IPv4 |
-| **Host / Name** | `netbird` *(or `@` if using root domain)* | Resolves `netbird.yourdomain.com` |
-| **Value / Target** | `203.0.113.10` | **Replace with your VPS public IPv4** |
-| **TTL** | `Auto` or `300` (5 minutes) | Caching duration |
-| **Proxy Status** *(Cloudflare only)* | **DNS only (Grey Cloud) ☁️** | **CRITICAL: Must NOT be proxied (Orange Cloud)** |
+| Setting | Host / Name | Target / Value | TTL | Proxy Status *(Cloudflare)* | Purpose |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **A** | `netbird` *(or `@`)* | `203.0.113.10` | `Auto` or `300` | **DNS only (Grey Cloud) ☁️** | Management dashboard, Signal, API & gRPC |
+| **A** *(Optional)* | `*.netbird` *(or `*`)* | `203.0.113.10` | `Auto` or `300` | **DNS only (Grey Cloud) ☁️** | Wildcard routing for NetBird Reverse Proxy / Public Ingress |
+
+*(Replace `203.0.113.10` with your actual VPS public IPv4 address!)*
 
 > [!WARNING]
-> **If using Cloudflare:** You **MUST set the record to "DNS only" (Grey cloud)**!
-> NetBird relies on direct UDP ports (WireGuard `51820/udp`, STUN `3478/udp`) and long-lived gRPC streaming connections. Cloudflare's standard CDN/proxy will block raw UDP and disconnect your NetBird agents.
+> **If using Cloudflare:** You **MUST set both records to "DNS only" (Grey cloud)**!
+> NetBird relies on direct UDP ports (WireGuard `51820/udp`, STUN `3478/udp`), persistent gRPC streams, and its reverse proxy issues TLS certificates directly via TLS-ALPN-01. Cloudflare's HTTP proxy (Orange Cloud) will block raw UDP and disrupt certificate issuance.
 
 Verify that DNS has propagated from your local terminal:
 ```bash
+# Verify dashboard:
 dig +short netbird.yourdomain.com
-# Should return your VPS IPv4 address!
+
+# Verify reverse proxy wildcard (if configured):
+dig +short test.netbird.yourdomain.com
 ```
 
 ---
@@ -232,6 +234,34 @@ export NETBIRD_ENCRYPTION_KEY="<your-stored-base64-encryption-key-from-config.ya
    docker compose start netbird-server
    ```
 All peers will immediately reconnect without needing re-pairing!
+
+---
+
+## Enabling NetBird Reverse Proxy (Exposing Public Resources)
+
+NetBird includes an integrated Reverse Proxy allowing you to expose private machines and internal services securely to the internet without installing VPN client software on visitors' devices.
+
+### 1. DNS Requirement
+Ensure you created the wildcard DNS record (e.g. `*.netbird.yourdomain.com` or `*.yourdomain.com`) pointing to your VPS public IPv4 as shown in Step 1.
+
+### 2. Generate Proxy Token in NetBird Admin Dashboard
+1. Log into your NetBird admin dashboard at `https://netbird.yourdomain.com`.
+2. Navigate to **Network** -> **Routing Peers** / **Reverse Proxy** (or **Access Control** -> **Resources**).
+3. Click **Add Reverse Proxy** to create a cluster entry and copy the generated token (`nbx_...`).
+
+### 3. Apply Token & Activate Proxy
+Link the token by updating `proxy.env` or providing it via `deploy.sh`:
+
+```bash
+# Option A: In-place update
+sed -i -e "s|^NB_PROXY_TOKEN=.*|NB_PROXY_TOKEN=nbx_YOUR_TOKEN_HERE|g" proxy.env
+docker compose restart proxy
+
+# Option B: Pass via deploy.sh during initial deployment or update
+NETBIRD_PROXY_TOKEN="nbx_YOUR_TOKEN_HERE" ./deploy.sh
+```
+
+Any public resource you configure in the NetBird UI (e.g. `app.netbird.yourdomain.com`) will automatically acquire Let's Encrypt TLS certificates and securely proxy traffic through Traefik directly to the destination peer.
 
 ---
 
