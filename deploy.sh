@@ -89,8 +89,23 @@ if [[ -z "${LE_EMAIL}" ]]; then
   LE_EMAIL="admin@${DOMAIN}"
 fi
 
-echo "    Target Domain:       ${DOMAIN}"
-echo "    Let's Encrypt Email: ${LE_EMAIL}"
+FORCE="${FORCE:-false}"
+
+echo ""
+echo "================================================================================"
+echo " ==> Deployment Configuration Summary"
+echo " Target Domain:       ${DOMAIN}"
+echo " Let's Encrypt Email: ${LE_EMAIL}"
+echo " Deployment Type:     $([[ -n "${EXISTING_DOMAIN}" ]] && echo 'Existing In-Place Update' || echo 'Fresh Installation')"
+echo "================================================================================"
+
+if [[ "${FORCE}" != "true" ]] && [[ -t 0 ]]; then
+  read -r -p "Proceed with these settings? [y/N]: " confirm
+  if [[ "${confirm}" != [yY] && "${confirm}" != [yY][eE][sS] ]]; then
+    echo "Aborted by user. No changes were made."
+    exit 1
+  fi
+fi
 
 # 4. Generate or update .env
 if [[ ! -f .env ]]; then
