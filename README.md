@@ -63,10 +63,17 @@ NETBIRD_DOMAIN="netbird.yourdomain.com" LETSENCRYPT_EMAIL="admin@yourdomain.com"
 
 ## Common Operations
 
-### Safe In-Place Updates
-Pull latest updates without touching existing secrets or wiping databases:
+### Safe In-Place Updates (One Command)
+Run a full automated update (creates a configuration backup, pulls latest container images, recreates services, updates CrowdSec threat rules, and prunes old images):
+
+**Directly on the VPS:**
 ```bash
-cd /opt/netbird && git pull && ./deploy.sh
+cd /home/deploy && ./deploy.sh --update
+```
+
+**Remotely from your local machine:**
+```bash
+./deploy.sh --remote root@racknerd --update
 ```
 
 ### Update CrowdSec Security Rules & Threat Intelligence
